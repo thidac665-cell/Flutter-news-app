@@ -30,6 +30,7 @@ class _HomeState extends State<Home> {
   int page = 1;
   bool isLoading = false;
   bool isFinish = false;
+  bool hasRequestedOnce = false;
 
   List<m.News> articles = [];
   final ScrollController _scrollController = ScrollController();
@@ -39,20 +40,24 @@ class _HomeState extends State<Home> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkConnectivityAndLoad();
+      checkConnectivity();
     });
 
     _scrollController.addListener(_onScroll);
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200 &&
+    if (!_scrollController.hasClients) return;
+
+    final position = _scrollController.position;
+
+    if (position.pixels >= position.maxScrollExtent - 200 &&
         !isLoading &&
         !isFinish) {
       _getNewsData();
     }
   }
+
 
   @override
   void dispose() {
@@ -60,17 +65,21 @@ class _HomeState extends State<Home> {
     super.dispose();
   }
 
-  Future<void> _checkConnectivityAndLoad() async {
+  Future<void> checkConnectivity() async {
     if (await getInternetStatus()) {
-      _getNewsData();
+      if (!hasRequestedOnce) {
+        hasRequestedOnce = true;
+        _getNewsData();
+      }
     } else {
-      if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const NoConnectivity()),
-      );
-      _checkConnectivityAndLoad();
+      Navigator.of(context, rootNavigator: true)
+          .push(MaterialPageRoute(
+        builder: (context) => const NoConnectivity(),
+      ))
+          .then((_) => checkConnectivity());
     }
   }
+
 
   Future<void> _getNewsData() async {
     if (isLoading || isFinish) return;
@@ -104,11 +113,13 @@ class _HomeState extends State<Home> {
       activeCategory = index;
       page = 1;
       isFinish = false;
+      hasRequestedOnce = false;
       articles.clear();
     });
 
     _getNewsData();
   }
+
 
   @override
   Widget build(BuildContext context) {
