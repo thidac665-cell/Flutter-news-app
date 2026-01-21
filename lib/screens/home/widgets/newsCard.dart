@@ -26,16 +26,21 @@ class _NewsCardState extends State<NewsCard> {
         Navigator.push(
           context,
           CupertinoPageRoute(
-            builder: (context) => NewsInfo(news: widget.article),
+            builder: (context) => NewsInfo(
+              news: widget.article,
+            ),
           ),
         );
       },
       child: Padding(
         padding: const EdgeInsets.all(10.0),
         child: Card(
-          elevation: 0.2,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(10.0),
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -52,13 +57,17 @@ class _NewsCardState extends State<NewsCard> {
                       return Container(
                         height: 200,
                         color: Colors.grey.shade300,
-                        child: const Icon(Icons.image, size: 50),
+                        child: const Icon(
+                          Icons.image,
+                          size: 50,
+                          color: Colors.grey,
+                        ),
                       );
                     },
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 /// TITLE
                 Text(
@@ -69,14 +78,14 @@ class _NewsCardState extends State<NewsCard> {
                     textStyle: const TextStyle(
                       color: AppColors.black,
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      fontSize: 17,
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 8),
 
-                /// AUTHOR + TIME ROW
+                /// AUTHOR + TIME
                 Row(
                   children: [
                     /// AUTHOR
@@ -98,6 +107,7 @@ class _NewsCardState extends State<NewsCard> {
                                 textStyle: const TextStyle(
                                   color: AppColors.black,
                                   fontWeight: FontWeight.w500,
+                                  fontSize: 13,
                                 ),
                               ),
                             ),
@@ -106,7 +116,7 @@ class _NewsCardState extends State<NewsCard> {
                       ),
                     ),
 
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
 
                     /// TIME
                     Row(
@@ -125,6 +135,7 @@ class _NewsCardState extends State<NewsCard> {
                             textStyle: const TextStyle(
                               color: AppColors.black,
                               fontWeight: FontWeight.w500,
+                              fontSize: 13,
                             ),
                           ),
                         ),
@@ -141,10 +152,9 @@ class _NewsCardState extends State<NewsCard> {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
-                    textStyle: const TextStyle(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w400,
-                    ),
+                    fontSize: 14,
+                    height: 1.4,
+                    color: Colors.grey[800],
                   ),
                 ),
               ],
