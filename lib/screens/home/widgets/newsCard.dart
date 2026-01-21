@@ -6,7 +6,7 @@ import 'package:news_app/common/colors.dart';
 import 'package:news_app/models/news_model.dart';
 import 'package:news_app/screens/news_info/news_info.dart';
 
-class NewsCard extends StatefulWidget {
+class NewsCard extends StatelessWidget {
   final News article;
 
   const NewsCard({
@@ -15,11 +15,6 @@ class NewsCard extends StatefulWidget {
   });
 
   @override
-  State<NewsCard> createState() => _NewsCardState();
-}
-
-class _NewsCardState extends State<NewsCard> {
-  @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
@@ -27,7 +22,7 @@ class _NewsCardState extends State<NewsCard> {
           context,
           CupertinoPageRoute(
             builder: (context) => NewsInfo(
-              news: widget.article,
+              news: article,
             ),
           ),
         );
@@ -45,33 +40,64 @@ class _NewsCardState extends State<NewsCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 /// IMAGE
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    widget.article.urlToImage ??
-                        'https://via.placeholder.com/400x200',
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
+                /// Refactor + UI improvements by Thida
+                Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        article.urlToImage ??
+                            'https://via.placeholder.com/400x200',
                         height: 200,
-                        color: Colors.grey.shade300,
-                        child: const Icon(
-                          Icons.image,
-                          size: 50,
-                          color: Colors.grey,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 200,
+                            width: double.infinity,
+                            color: Colors.grey.shade300,
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.image_not_supported,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    /// SOURCE BADGE
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                      );
-                    },
-                  ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          article.source?.name ?? 'News',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 12),
 
                 /// TITLE
                 Text(
-                  widget.article.title ?? '',
+                  article.title ?? '',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
@@ -100,7 +126,7 @@ class _NewsCardState extends State<NewsCard> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              widget.article.author ?? 'Unknown',
+                              article.author ?? 'Unknown',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
@@ -118,7 +144,7 @@ class _NewsCardState extends State<NewsCard> {
 
                     const SizedBox(width: 12),
 
-                    /// TIME
+                    /// TIME (safe handling)
                     Row(
                       children: [
                         const Icon(
@@ -128,9 +154,12 @@ class _NewsCardState extends State<NewsCard> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          Jiffy.parse(
-                            widget.article.publishedAt ?? '',
-                          ).fromNow(),
+                          article.publishedAt != null &&
+                              article.publishedAt!.isNotEmpty
+                              ? Jiffy.parse(
+                            article.publishedAt!,
+                          ).fromNow()
+                              : 'Unknown',
                           style: GoogleFonts.poppins(
                             textStyle: const TextStyle(
                               color: AppColors.black,
@@ -148,7 +177,7 @@ class _NewsCardState extends State<NewsCard> {
 
                 /// DESCRIPTION
                 Text(
-                  widget.article.description ?? '',
+                  article.description ?? '',
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
