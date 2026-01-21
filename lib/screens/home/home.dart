@@ -16,38 +16,42 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  List<String> categories = [
+  final List<String> categories = [
     'business',
     'entertainment',
     'general',
     'health',
     'science',
     'sports',
-    'technology'
+    'technology',
   ];
 
   int activeCategory = 0;
   int page = 1;
   bool isLoading = false;
   bool isFinish = false;
-  bool hasData = false;
+
   List<m.News> articles = [];
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    checkConnectivity();
 
-    // Auto load more when scroll reaches bottom
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent &&
-          !isLoading &&
-          !isFinish) {
-        getNewsData();
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkConnectivityAndLoad();
     });
+
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200 &&
+        !isLoading &&
+        !isFinish) {
+      _getNewsData();
+    }
   }
 
   @override
@@ -56,80 +60,73 @@ class _HomeState extends State<Home> {
     super.dispose();
   }
 
-  Future<void> checkConnectivity() async {
+  Future<void> _checkConnectivityAndLoad() async {
     if (await getInternetStatus()) {
-      getNewsData();
+      _getNewsData();
     } else {
-      Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(
-          builder: (context) => const NoConnectivity(),
-        ),
-      ).then((value) => checkConnectivity());
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const NoConnectivity()),
+      );
+      _checkConnectivityAndLoad();
     }
   }
 
-  Future<void> getNewsData() async {
-    if (isLoading) return;
+  Future<void> _getNewsData() async {
+    if (isLoading || isFinish) return;
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
-    ListData listData =
-    await NewsProvider().GetEverything(categories[activeCategory], page++);
+    final listData = await NewsProvider()
+        .GetEverything(categories[activeCategory], page);
 
     if (listData.status) {
-      List<m.News> items = listData.data as List<m.News>;
-      hasData = true;
+      final items = listData.data as List<m.News>;
 
-      if (items.isNotEmpty) {
-        articles.addAll(items);
-      }
-
-      if (articles.length >= listData.totalContent) {
+      if (items.isEmpty) {
         isFinish = true;
+      } else {
+        articles.addAll(items);
+        page++;
+        if (articles.length >= listData.totalContent) {
+          isFinish = true;
+        }
       }
-
-      setState(() {});
     }
 
-    setState(() {
-      isLoading = false;
-    });
+    setState(() => isLoading = false);
   }
 
   void onCategoryChange(int index) {
+    if (index == activeCategory) return;
+
     setState(() {
       activeCategory = index;
-      articles = [];
       page = 1;
       isFinish = false;
-      hasData = false;
+      articles.clear();
     });
-    getNewsData();
+
+    _getNewsData();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.black,
         leadingWidth: 100,
-        leading: Center(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 20),
-            child: Image.asset(
-              "assets/images/logo.png",
-              fit: BoxFit.contain,
-              color: AppColors.white,
-            ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Image.asset(
+            "assets/images/logo.png",
+            color: AppColors.white,
           ),
         ),
-        backgroundColor: AppColors.black,
-        elevation: 5,
         actions: const [
           Padding(
             padding: EdgeInsets.all(8.0),
-            child: Icon(Icons.search, size: 34, color: AppColors.white),
+            child: Icon(Icons.search, color: AppColors.white, size: 30),
           )
         ],
       ),
@@ -138,53 +135,64 @@ class _HomeState extends State<Home> {
           constraints: const BoxConstraints(maxWidth: 400),
           child: Column(
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              /// Categories
               SizedBox(
                 height: 50,
                 child: ListView.builder(
-                  itemCount: categories.length,
                   scrollDirection: Axis.horizontal,
-                  itemBuilder: (context, index) => CategoryItem(
-                    index: index,
-                    categoryName: categories[index],
-                    activeCategory: activeCategory,
-                    onClick: () => onCategoryChange(index),
-                  ),
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    return CategoryItem(
+                      index: index,
+                      categoryName: categories[index],
+                      activeCategory: activeCategory,
+                      onClick: () => onCategoryChange(index),
+                    );
+                  },
                 ),
               ),
-              const SizedBox(height: 20),
+
+              const SizedBox(height: 12),
+
+              /// News List
               Expanded(
-                child: articles.isEmpty && !isLoading
-                    ? const Center(child: Text("No articles yet"))
+                child: articles.isEmpty && isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : articles.isEmpty
+                    ? const Center(
+                  child: Text(
+                    "No articles found",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                )
                     : ListView.builder(
                   controller: _scrollController,
                   itemCount: articles.length + 1,
                   itemBuilder: (context, index) {
                     if (index < articles.length) {
                       return NewsCard(article: articles[index]);
-                    } else {
-                      // Show loading or end message
-                      if (isFinish) {
-                        return Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Center(
-                            child: Text(
-                              "No more articles",
-                              style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 16),
-                            ),
-                          ),
-                        );
-                      } else {
-                        return const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
                     }
+
+                    if (isFinish) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Center(
+                          child: Text(
+                            "You're all caught up",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
                   },
                 ),
               ),
