@@ -158,42 +158,35 @@ class _HomeState extends State<Home> {
 
               /// News List
               Expanded(
-                child: articles.isEmpty && isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : articles.isEmpty
-                    ? const Center(
-                  child: Text(
-                    "No articles found",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                )
-                    : ListView.builder(
-                  controller: _scrollController,
-                  itemCount: articles.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index < articles.length) {
-                      return NewsCard(article: articles[index]);
-                    }
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: ListView.builder(
+                    key: ValueKey(activeCategory),
+                    controller: _scrollController,
+                    itemCount: articles.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index < articles.length) {
+                        return NewsCard(article: articles[index]);
+                      }
 
-                    if (isFinish) {
+                      if (isFinish) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(
+                            child: Text(
+                              "You're all caught up",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        );
+                      }
+
                       return const Padding(
                         padding: EdgeInsets.all(16),
-                        child: Center(
-                          child: Text(
-                            "You're all caught up",
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ),
+                        child: Center(child: CircularProgressIndicator()),
                       );
-                    }
-
-                    return const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  },
+                    },
+                  ),
                 ),
               ),
             ],
