@@ -45,6 +45,7 @@ class _NewsCardState extends State<NewsCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 /// IMAGE
+                /// Image error handling added by Thida
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
@@ -56,9 +57,11 @@ class _NewsCardState extends State<NewsCard> {
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         height: 200,
+                        width: double.infinity,
                         color: Colors.grey.shade300,
+                        alignment: Alignment.center,
                         child: const Icon(
-                          Icons.image,
+                          Icons.image_not_supported,
                           size: 50,
                           color: Colors.grey,
                         ),
@@ -118,7 +121,7 @@ class _NewsCardState extends State<NewsCard> {
 
                     const SizedBox(width: 12),
 
-                    /// TIME
+                    /// TIME (safe handling)
                     Row(
                       children: [
                         const Icon(
@@ -128,9 +131,12 @@ class _NewsCardState extends State<NewsCard> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          Jiffy.parse(
-                            widget.article.publishedAt ?? '',
-                          ).fromNow(),
+                          widget.article.publishedAt != null &&
+                              widget.article.publishedAt!.isNotEmpty
+                              ? Jiffy.parse(
+                            widget.article.publishedAt!,
+                          ).fromNow()
+                              : 'Unknown',
                           style: GoogleFonts.poppins(
                             textStyle: const TextStyle(
                               color: AppColors.black,
