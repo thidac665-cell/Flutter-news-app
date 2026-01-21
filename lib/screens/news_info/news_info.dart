@@ -13,6 +13,13 @@ class NewsInfo extends StatelessWidget {
     required this.news,
   });
 
+  String cleanContent(String? content) {
+    if (content == null || content.isEmpty) {
+      return 'No detailed content available for this article.';
+    }
+    return content.split('[+').first.trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,7 +43,7 @@ class NewsInfo extends StatelessWidget {
                 height: 220,
                 width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
+                errorBuilder: (_, __, ___) {
                   return Container(
                     height: 220,
                     color: Colors.grey.shade300,
@@ -89,11 +96,9 @@ class NewsInfo extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            /// CONTENT (API IS TRUNCATED — THIS IS EXPECTED)
+            /// CONTENT
             Text(
-              news.content?.isNotEmpty == true
-                  ? news.content!
-                  : 'No detailed content available for this article.',
+              cleanContent(news.content),
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 height: 1.6,
@@ -101,9 +106,9 @@ class NewsInfo extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const Divider(height: 32),
 
-            /// READ FULL ARTICLE BUTTON (REAL FIX)
+            /// READ FULL ARTICLE
             if (news.url != null && news.url!.isNotEmpty)
               SizedBox(
                 width: double.infinity,
@@ -111,8 +116,8 @@ class NewsInfo extends StatelessWidget {
                   icon: const Icon(Icons.open_in_new),
                   label: const Text('Read Full Article'),
                   onPressed: () async {
-                    final uri = Uri.parse(news.url!);
-                    if (await canLaunchUrl(uri)) {
+                    final uri = Uri.tryParse(news.url!);
+                    if (uri != null && await canLaunchUrl(uri)) {
                       await launchUrl(
                         uri,
                         mode: LaunchMode.externalApplication,

@@ -16,14 +16,13 @@ class NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
       onTap: () {
         Navigator.push(
           context,
           CupertinoPageRoute(
-            builder: (context) => NewsInfo(
-              news: article,
-            ),
+            builder: (context) => NewsInfo(news: article),
           ),
         );
       },
@@ -39,7 +38,7 @@ class NewsCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// IMAGE
+                /// IMAGE + SOURCE
                 Stack(
                   children: [
                     ClipRRect(
@@ -50,7 +49,7 @@ class NewsCard extends StatelessWidget {
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
+                        errorBuilder: (_, __, ___) {
                           return Container(
                             height: 200,
                             color: Colors.grey.shade300,
@@ -64,8 +63,6 @@ class NewsCard extends StatelessWidget {
                         },
                       ),
                     ),
-
-                    /// SOURCE BADGE
                     Positioned(
                       top: 8,
                       right: 8,
@@ -95,7 +92,9 @@ class NewsCard extends StatelessWidget {
 
                 /// TITLE
                 Text(
-                  article.title ?? '',
+                  article.title?.isNotEmpty == true
+                      ? article.title!
+                      : 'No title available',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
@@ -147,7 +146,9 @@ class NewsCard extends StatelessWidget {
 
                 /// DESCRIPTION
                 Text(
-                  article.description ?? '',
+                  article.description?.isNotEmpty == true
+                      ? article.description!
+                      : 'No description available.',
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
