@@ -5,7 +5,6 @@ import 'package:jiffy/jiffy.dart';
 import 'package:news_app/common/colors.dart';
 import 'package:news_app/models/news_model.dart';
 import 'package:news_app/screens/news_info/news_info.dart';
-import 'package:skeletons/skeletons.dart';
 
 class NewsCard extends StatefulWidget {
   final News article;
@@ -22,17 +21,14 @@ class NewsCard extends StatefulWidget {
 class _NewsCardState extends State<NewsCard> {
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return GestureDetector(
-      onTap: () => {
+      onTap: () {
         Navigator.push(
           context,
           CupertinoPageRoute(
-            builder: (context) => NewsInfo(
-              news: widget.article,
-            ),
+            builder: (context) => NewsInfo(news: widget.article),
           ),
-        )
+        );
       },
       child: Padding(
         padding: const EdgeInsets.all(10.0),
@@ -40,118 +36,118 @@ class _NewsCardState extends State<NewsCard> {
           elevation: 0.2,
           child: Padding(
             padding: const EdgeInsets.all(10.0),
-            child: Container(
-              alignment: Alignment.centerLeft,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Image.network(
-                    widget.article.urlToImage.toString(),
-                    fit: BoxFit.contain,
-                    frameBuilder: (BuildContext context, Widget child,
-                        int? frame, bool wasSynchronouslyLoaded) {
-                      if (wasSynchronouslyLoaded) return child;
-                      if (frame == null) {
-                        return Center(
-                          child: Skeleton(
-                            isLoading: true,
-                            skeleton: SkeletonParagraph(),
-                            child: const Text(''),
-                          ),
-                        );
-                      }
-                      return child;
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// IMAGE
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    widget.article.urlToImage ??
+                        'https://via.placeholder.com/400x200',
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 200,
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.image, size: 50),
+                      );
                     },
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 10,
-                    ),
-                    child: Text(
-                      widget.article.title.toString(),
-                      style: GoogleFonts.poppins(
-                        textStyle: const TextStyle(
-                          color: AppColors.black,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                ),
+
+                const SizedBox(height: 10),
+
+                /// TITLE
+                Text(
+                  widget.article.title ?? '',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    textStyle: const TextStyle(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
                     ),
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
+                ),
+
+                const SizedBox(height: 8),
+
+                /// AUTHOR + TIME ROW
+                Row(
+                  children: [
+                    /// AUTHOR
+                    Expanded(
+                      child: Row(
                         children: [
                           const Icon(
                             Icons.person,
+                            size: 18,
                             color: AppColors.black,
-                            size: 20,
                           ),
-                          SizedBox(
-                            width: size.width / 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                widget.article.author.toString(),
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
-                                  textStyle: const TextStyle(
-                                    color: AppColors.black,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.access_time,
-                            color: AppColors.black,
-                            size: 20,
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              left: 8,
-                            ),
+                          const SizedBox(width: 6),
+                          Expanded(
                             child: Text(
-                              Jiffy.parse(
-                                widget.article.publishedAt.toString(),
-                              ).fromNow().toString(),
+                              widget.article.author ?? 'Unknown',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
                                 textStyle: const TextStyle(
                                   color: AppColors.black,
                                   fontWeight: FontWeight.w500,
-                                  overflow: TextOverflow.fade,
                                 ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 10,
                     ),
-                    child: Text(
-                      widget.article.description.toString(),
-                      style: GoogleFonts.poppins(
-                        textStyle: const TextStyle(
+
+                    const SizedBox(width: 10),
+
+                    /// TIME
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.access_time,
+                          size: 18,
                           color: AppColors.black,
-                          fontWeight: FontWeight.w400,
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        Text(
+                          Jiffy.parse(
+                            widget.article.publishedAt ?? '',
+                          ).fromNow(),
+                          style: GoogleFonts.poppins(
+                            textStyle: const TextStyle(
+                              color: AppColors.black,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  )
-                ],
-              ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                /// DESCRIPTION
+                Text(
+                  widget.article.description ?? '',
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    textStyle: const TextStyle(
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
