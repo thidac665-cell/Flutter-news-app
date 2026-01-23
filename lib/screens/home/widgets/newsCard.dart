@@ -16,31 +16,29 @@ class NewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
       onTap: () {
         Navigator.push(
           context,
           CupertinoPageRoute(
-            builder: (context) => NewsInfo(
-              news: article,
-            ),
+            builder: (context) => NewsInfo(news: article),
           ),
         );
       },
       child: Padding(
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.all(10),
         child: Card(
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// IMAGE
-                /// Refactor + UI improvements by Thida
+                /// IMAGE + SOURCE
                 Stack(
                   children: [
                     ClipRRect(
@@ -51,10 +49,9 @@ class NewsCard extends StatelessWidget {
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
+                        errorBuilder: (_, __, ___) {
                           return Container(
                             height: 200,
-                            width: double.infinity,
                             color: Colors.grey.shade300,
                             alignment: Alignment.center,
                             child: const Icon(
@@ -66,8 +63,6 @@ class NewsCard extends StatelessWidget {
                         },
                       ),
                     ),
-
-                    /// SOURCE BADGE
                     Positioned(
                       top: 8,
                       right: 8,
@@ -97,15 +92,15 @@ class NewsCard extends StatelessWidget {
 
                 /// TITLE
                 Text(
-                  article.title ?? '',
+                  article.title?.isNotEmpty == true
+                      ? article.title!
+                      : 'No title available',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(
-                    textStyle: const TextStyle(
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 17,
-                    ),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.black,
                   ),
                 ),
 
@@ -114,59 +109,33 @@ class NewsCard extends StatelessWidget {
                 /// AUTHOR + TIME
                 Row(
                   children: [
-                    /// AUTHOR
                     Expanded(
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.person,
-                            size: 18,
-                            color: AppColors.black,
-                          ),
+                          const Icon(Icons.person, size: 18),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               article.author ?? 'Unknown',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.poppins(
-                                textStyle: const TextStyle(
-                                  color: AppColors.black,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 13,
-                                ),
-                              ),
+                              style: GoogleFonts.poppins(fontSize: 13),
                             ),
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(width: 12),
-
-                    /// TIME (safe handling)
                     Row(
                       children: [
-                        const Icon(
-                          Icons.access_time,
-                          size: 18,
-                          color: AppColors.black,
-                        ),
+                        const Icon(Icons.access_time, size: 18),
                         const SizedBox(width: 6),
                         Text(
                           article.publishedAt != null &&
                               article.publishedAt!.isNotEmpty
-                              ? Jiffy.parse(
-                            article.publishedAt!,
-                          ).fromNow()
+                              ? Jiffy.parse(article.publishedAt!).fromNow()
                               : 'Unknown',
-                          style: GoogleFonts.poppins(
-                            textStyle: const TextStyle(
-                              color: AppColors.black,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                          ),
+                          style: GoogleFonts.poppins(fontSize: 13),
                         ),
                       ],
                     ),
@@ -177,7 +146,9 @@ class NewsCard extends StatelessWidget {
 
                 /// DESCRIPTION
                 Text(
-                  article.description ?? '',
+                  article.description?.isNotEmpty == true
+                      ? article.description!
+                      : 'No description available.',
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.poppins(

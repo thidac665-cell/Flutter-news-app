@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:loadmore/loadmore.dart';
 import 'package:news_app/common/colors.dart';
 import 'package:news_app/common/common.dart';
 import 'package:news_app/common/widgets/no_connectivity.dart';
@@ -17,152 +16,192 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  List<String> categories = [
+  final List<String> categories = [
     'business',
     'entertainment',
     'general',
     'health',
     'science',
     'sports',
-    'technology'
+    'technology',
   ];
 
   int activeCategory = 0;
-
   int page = 1;
+  bool isLoading = false;
   bool isFinish = false;
-  bool data = false;
+  bool hasRequestedOnce = false;
+
   List<m.News> articles = [];
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    checkConnectivity();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      checkConnectivity();
+    });
+
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    final position = _scrollController.position;
+
+    if (position.pixels >= position.maxScrollExtent - 200 &&
+        !isLoading &&
+        !isFinish) {
+      _getNewsData();
+    }
+  }
+
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> checkConnectivity() async {
     if (await getInternetStatus()) {
-      getNewsData();
+      if (!hasRequestedOnce) {
+        hasRequestedOnce = true;
+        _getNewsData();
+      }
     } else {
-      Navigator.of(context, rootNavigator: true,)
-          .push(
-            MaterialPageRoute(
-              builder: (context) => const NoConnectivity(),
-            ),
-          )
-          .then(
-            (value) => checkConnectivity(),
-          );
+      Navigator.of(context, rootNavigator: true)
+          .push(MaterialPageRoute(
+        builder: (context) => const NoConnectivity(),
+      ))
+          .then((_) => checkConnectivity());
     }
   }
 
-  Future<bool> getNewsData() async {
-    ListData listData = await NewsProvider()
-        .GetEverything(categories[activeCategory].toString(), page++);
+
+  Future<void> _getNewsData() async {
+    if (isLoading || isFinish) return;
+
+    setState(() => isLoading = true);
+
+    final listData = await NewsProvider()
+        .GetEverything(categories[activeCategory], page);
 
     if (listData.status) {
-      List<m.News> items = listData.data as List<m.News>;
-      data = true;
+      final items = listData.data as List<m.News>;
 
-      if (mounted) {
-        setState(() {});
-      }
-
-      if (items.length == listData.totalContent) {
+      if (items.isEmpty) {
         isFinish = true;
-      }
-
-      if (items.isNotEmpty) {
-        articles.addAll(items);
-        setState(() {});
-        return true;
       } else {
-        return false;
+        articles.addAll(items);
+        page++;
+        if (articles.length >= listData.totalContent) {
+          isFinish = true;
+        }
       }
-    } else {
-      return false;
     }
+
+    setState(() => isLoading = false);
   }
+
+  void onCategoryChange(int index) {
+    if (index == activeCategory) return;
+
+    setState(() {
+      activeCategory = index;
+      page = 1;
+      isFinish = false;
+      hasRequestedOnce = false;
+      articles.clear();
+    });
+
+    _getNewsData();
+  }
+
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.black,
         leadingWidth: 100,
-        leading: Center(
-          child: Padding(
-            padding: const EdgeInsets.only(
-              left: 20,
-            ),
-            child: Image.asset(
-              "assets/images/logo.png",
-              fit: BoxFit.contain,
-              color: AppColors.white,
-            ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Image.asset(
+            "assets/images/logo.png",
+            color: AppColors.white,
           ),
         ),
-        backgroundColor: AppColors.black,
-        elevation: 5,
         actions: const [
           Padding(
             padding: EdgeInsets.all(8.0),
-            child: Icon(
-              Icons.search,
-              size: 34,
-              color: AppColors.white,
-            ),
+            child: Icon(Icons.search, color: AppColors.white, size: 30),
           )
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(
-              height: 20,
-            ),
-            SizedBox(
-              height: 50,
-              width: size.width,
-              child: ListView.builder(
-                itemCount: categories.length,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (BuildContext context, int index) => CategoryItem(
-                  index: index,
-                  categoryName: categories[index],
-                  activeCategory: activeCategory,
-                  onClick: () {
-                    setState(() {
-                      activeCategory = index;
-                      articles = [];
-                      page = 1;
-                      isFinish = false;
-                      data = false;
-                    });
-                    getNewsData();
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
+
+              /// Categories
+              SizedBox(
+                height: 50,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    return CategoryItem(
+                      index: index,
+                      categoryName: categories[index],
+                      activeCategory: activeCategory,
+                      onClick: () => onCategoryChange(index),
+                    );
                   },
                 ),
               ),
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-            SizedBox(
-              height: size.height,
-              child: LoadMore(
-                isFinish: isFinish,
-                onLoadMore: getNewsData,
-                whenEmptyLoad: true,
-                delegate: const DefaultLoadMoreDelegate(),
-                textBuilder: DefaultLoadMoreTextBuilder.english,
-                child: ListView.builder(
-                  itemCount: articles.length,
-                  itemBuilder: (context, index) =>
-                      NewsCard(article: articles[index]),
+
+              const SizedBox(height: 12),
+
+              /// News List
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: ListView.builder(
+                    key: ValueKey(activeCategory),
+                    controller: _scrollController,
+                    itemCount: articles.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index < articles.length) {
+                        return NewsCard(article: articles[index]);
+                      }
+
+                      if (isFinish) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(
+                            child: Text(
+                              "You're all caught up",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    },
+                  ),
                 ),
               ),
-            )
-          ],
+            ],
+          ),
         ),
       ),
     );

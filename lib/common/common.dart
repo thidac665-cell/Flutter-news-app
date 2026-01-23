@@ -1,11 +1,25 @@
+import 'dart:io';
+import 'dart:async';
+import 'dart:io' show InternetAddress;
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 Future<bool> getInternetStatus() async {
-  final connectivityResult = await (Connectivity().checkConnectivity());
-  if (connectivityResult == ConnectivityResult.mobile) {
-    return true;
-  } else if (connectivityResult == ConnectivityResult.wifi) {
+  // Windows desktop fix
+  if (Platform.isWindows) {
     return true;
   }
-  return false;
+
+  final connectivityResult = await Connectivity().checkConnectivity();
+
+  if (connectivityResult == ConnectivityResult.none) {
+    return false;
+  }
+
+  // Real internet check (Android / iOS)
+  try {
+    final result = await InternetAddress.lookup('google.com');
+    return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+  } catch (_) {
+    return false;
+  }
 }

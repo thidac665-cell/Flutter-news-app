@@ -4,6 +4,9 @@ import 'package:jiffy/jiffy.dart';
 import 'package:news_app/common/colors.dart';
 import 'package:news_app/models/news_model.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+=======
+
 class NewsInfo extends StatelessWidget {
   final News news;
 
@@ -12,15 +15,29 @@ class NewsInfo extends StatelessWidget {
     required this.news,
   });
 
+
+  String cleanContent(String? content) {
+    if (content == null || content.isEmpty) {
+      return 'No detailed content available for this article.';
+    }
+    return content.split('[+').first.trim();
+  }
+
+=======
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'News Details',
+
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+=======
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
           ),
+
         ),
       ),
       body: SingleChildScrollView(
@@ -29,6 +46,8 @@ class NewsInfo extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             /// IMAGE
+
+=======
             /// Safe image handling added by Thida
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
@@ -38,6 +57,9 @@ class NewsInfo extends StatelessWidget {
                 height: 220,
                 width: double.infinity,
                 fit: BoxFit.cover,
+
+                errorBuilder: (_, __, ___) {
+=======
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     height: 220,
@@ -92,17 +114,35 @@ class NewsInfo extends StatelessWidget {
             const SizedBox(height: 16),
 
             /// CONTENT
-            /// Content fallback added by Thida
             Text(
-              news.content?.isNotEmpty == true
-                  ? news.content!
-                  : 'No detailed content available for this article.',
+              cleanContent(news.content),
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 height: 1.6,
                 color: Colors.grey[800],
               ),
             ),
+
+            const Divider(height: 32),
+
+            /// READ FULL ARTICLE
+            if (news.url != null && news.url!.isNotEmpty)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.open_in_new),
+                  label: const Text('Read Full Article'),
+                  onPressed: () async {
+                    final uri = Uri.tryParse(news.url!);
+                    if (uri != null && await canLaunchUrl(uri)) {
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
+                    }
+                  },
+                ),
+              ),
           ],
         ),
       ),
